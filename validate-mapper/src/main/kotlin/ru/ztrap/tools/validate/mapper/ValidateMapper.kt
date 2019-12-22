@@ -19,7 +19,7 @@ abstract class ValidateMapper<T : Any, R> : (T) -> R {
         validate(raw)
 
         if (failedParams.isNotEmpty()) {
-            throw FailedValidationException(failedParams, raw)
+            throw FailedValidationException(HashMap(failedParams), raw)
         }
 
         return transform(raw)

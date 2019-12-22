@@ -40,7 +40,7 @@ ext {
                     id         : "$baseArtifactName-project",
                     name       : "Root project for Validate mapper",
                     description: "Root project for Validate mapper $baseRepoUrl",
-                    version    : "1.0.0",
+                    version    : "1.0.1",
             ]
     ]
 }
