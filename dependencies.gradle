@@ -1,0 +1,46 @@
+ext {
+    baseArtifactName = "validate-mapper"
+    baseRepoBucket = "zTrap/$baseArtifactName"
+    baseRepoUrl = "https://github.com/$baseRepoBucket"
+
+    setup = [
+            jvm: JavaVersion.VERSION_1_8
+    ]
+    versions = [
+            kotlin : "1.3.61",
+            dokka  : "0.9.16",
+            bintray: "1.8.4",
+            gson   : "2.8.6",
+            junit  : "4.12",
+            assertj: "3.14.0"
+    ]
+    pom_info = [
+            group    : "ru.ztrap.tools",
+            packaging: "jar",
+            repo     : [
+                    type: "maven",
+                    vcs : "${baseRepoUrl}.git",
+                    url : baseRepoUrl,
+            ],
+            scm      : [
+                    url           : baseRepoUrl,
+                    connection    : "scm:git@github.com:${baseRepoBucket}.git",
+                    dev_connection: "scm:git@github.com:${baseRepoBucket}.git"
+            ],
+            license  : [
+                    name: "the apache software license, version 2.0",
+                    url : "http://www.apache.org/licenses/license-2.0.txt",
+                    dist: "repo",
+            ],
+            developer: [
+                    id  : "ztrap",
+                    name: "peter gulko"
+            ],
+            artifact : [
+                    id         : "$baseArtifactName-project",
+                    name       : "Root project for Validate mapper",
+                    description: "Root project for Validate mapper $baseRepoUrl",
+                    version    : "1.0.0",
+            ]
+    ]
+}

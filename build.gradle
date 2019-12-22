@@ -1,0 +1,43 @@
+buildscript {
+    apply from: 'dependencies.gradle'
+
+    repositories {
+        google()
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$versions.kotlin"
+        classpath "org.jetbrains.dokka:dokka-android-gradle-plugin:$versions.dokka"
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$versions.bintray"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'kotlin'
+
+    sourceSets {
+        main.java.setSrcDirs(['src/main/kotlin'])
+        test.java.setSrcDirs(['src/test/kotlin'])
+    }
+
+    compileKotlin {
+        kotlinOptions.jvmTarget = setup.jvm
+    }
+
+    compileTestKotlin {
+        kotlinOptions.jvmTarget = setup.jvm
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

@@ -1,0 +1,24 @@
+apply plugin: "org.jetbrains.dokka"
+
+ext {
+    pom_info.artifact.id = "$baseArtifactName"
+    pom_info.artifact.name = "Validate mapper"
+    pom_info.artifact.description = "Powerful validate mapper $pom_info.repo.url"
+}
+
+dokka {
+    outputFormat = "javadoc"
+    outputDirectory = "$buildDir/javadoc"
+    packageOptions {
+        prefix = pom_info.artifact.id
+    }
+}
+
+apply from: "../publishing.gradle"
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$versions.kotlin"
+
+    testImplementation "junit:junit:$versions.junit"
+    testImplementation "org.assertj:assertj-core:$versions.assertj"
+}
