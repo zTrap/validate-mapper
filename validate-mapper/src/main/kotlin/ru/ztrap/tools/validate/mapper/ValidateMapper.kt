@@ -3,6 +3,7 @@ package ru.ztrap.tools.validate.mapper
 import ru.ztrap.tools.validate.annotations.Checks
 import ru.ztrap.tools.validate.annotations.ExcludeChecks
 import ru.ztrap.tools.validate.annotations.NotRequired
+import ru.ztrap.tools.validate.annotations.Parameters
 import ru.ztrap.tools.validate.checks.ValidateChecker
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
@@ -28,48 +29,67 @@ abstract class ValidateMapper<T : Any, R> : (T) -> R {
     protected abstract fun transform(raw: T): R
 
     private fun validate(raw: T) {
-        raw::class.java.declaredFields.forEach { property ->
-            val skip = property.haveAnnotation<NotRequired>()
+        raw::class.java.declaredFields.forEach { field ->
+            val required = field.notHaveAnnotation<NotRequired>()
 
-            val propertyName = nameExtractor?.invoke(property) ?: property.name
+            val fieldName = nameExtractor?.invoke(field) ?: field.name
 
-            if (skip) return@forEach
-
-            val value = property.let {
+            val value = field.let {
                 it.isAccessible = true
                 it.get(raw)
             }
 
-            val reasons = arrayListOf<String>()
+            val reasons = when {
+                value != null -> {
+                    val additionChecks = globalChecks.asSequence()
+                        .filter { it.key.java.isInstance(value) }
+                        .flatMap { it.value.asSequence() }
 
-            if (value != null) {
-                val additionChecks = globalChecks.asSequence()
-                    .filter { it.key.java.isInstance(value) }
-                    .flatMap { it.value.asSequence() }
+                    val excludedChecks = field.findAnnotation<ExcludeChecks>()
+                        ?.expressionClasses
+                        ?.asSequence()
+                        .orEmpty()
 
-                val excludedChecks = property.findAnnotation<ExcludeChecks>()
-                    ?.expressionClasses
-                    ?.asSequence()
-                    .orEmpty()
-
-                property.findAnnotation<Checks>()
-                    ?.expressionClasses
-                    ?.asSequence()
-                    .orEmpty()
-                    .plus(additionChecks)
-                    .minus(excludedChecks)
-                    .map { it.getOrCreateInstance() }
-                    .map { it(value) }
-                    .mapNotNull { it as? ValidateChecker.Result.Error }
-                    .map { it.reason }
-                    .toCollection(reasons)
-            } else {
-                reasons.add("null")
+                    field.findAnnotation<Checks>()
+                        ?.expressionClasses
+                        ?.asSequence()
+                        .orEmpty()
+                        .plus(additionChecks)
+                        .minus(excludedChecks)
+                        .map { it.getOrCreateInstance() to field.parametersFor(it) }
+                        .map { (checker, params) -> checker.invoke(value, params) }
+                        .map { it.reason }
+                        .filter { it.isNotBlank() }
+                        .toList()
+                }
+                required -> listOf("null")
+                else -> return@forEach
             }
 
             if (reasons.isNotEmpty()) {
-                failedParams[propertyName] = reasons
+                failedParams[fieldName] = reasons
             }
+        }
+    }
+
+    private fun Field.parametersFor(cls: KClass<out ValidateChecker>): Map<String, Any> {
+        val annotation = findAnnotation<Parameters>()
+
+        return if (annotation != null && cls == annotation.forChecker) {
+            annotation.run {
+                emptySequence<Pair<String, Any>>()
+                    .plus(string.map { it.name to (it.value as Any) })
+                    .plus(byte.map { it.name to (it.value as Any) })
+                    .plus(short.map { it.name to (it.value as Any) })
+                    .plus(int.map { it.name to (it.value as Any) })
+                    .plus(long.map { it.name to (it.value as Any) })
+                    .plus(float.map { it.name to (it.value as Any) })
+                    .plus(double.map { it.name to (it.value as Any) })
+                    .plus(kclass.map { it.name to (it.value as Any) })
+                    .toMap()
+            }
+        } else {
+            mapOf()
         }
     }
 

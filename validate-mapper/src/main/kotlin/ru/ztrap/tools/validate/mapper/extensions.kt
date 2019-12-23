@@ -14,11 +14,6 @@ fun <T : Any, R : Any> List<T?>?.validateMap(mapper: ValidateMapper<T, R>): List
     return deepAssert().map(mapper)
 }
 
-@UseExperimental(ExperimentalStdlibApi::class)
-inline fun <reified A : Annotation> Field.findAnnotation(): A? {
-    return getAnnotation(A::class.java)
-}
-
-inline fun <reified A : Annotation> Field.haveAnnotation(): Boolean {
-    return findAnnotation<A>() != null
-}
+inline fun <reified A : Annotation> Field.findAnnotation(): A? = getAnnotation(A::class.java)
+inline fun <reified A : Annotation> Field.haveAnnotation(): Boolean = findAnnotation<A>() != null
+inline fun <reified A : Annotation> Field.notHaveAnnotation(): Boolean = !haveAnnotation<A>()

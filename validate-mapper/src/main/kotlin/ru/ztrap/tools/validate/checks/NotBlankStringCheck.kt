@@ -1,10 +1,8 @@
 package ru.ztrap.tools.validate.checks
 
-import ru.ztrap.tools.validate.checks.ValidateChecker.Result
+object NotBlankStringCheck : ValidateChecker() {
 
-object NotBlankStringCheck : ValidateChecker {
-
-    override fun invoke(raw: Any): Result {
+    override fun invoke(raw: Any, parameters: Map<String, Any>): Result {
         return if (raw is String) {
             when {
                 raw.isEmpty() -> Result.Error("empty string")

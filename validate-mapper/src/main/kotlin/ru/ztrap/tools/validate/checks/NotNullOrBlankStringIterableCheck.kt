@@ -1,10 +1,8 @@
 package ru.ztrap.tools.validate.checks
 
-import ru.ztrap.tools.validate.checks.ValidateChecker.Result
+object NotNullOrBlankStringIterableCheck : ValidateChecker() {
 
-object NotNullOrBlankStringIterableCheck : ValidateChecker {
-
-    override fun invoke(raw: Any): Result {
+    override fun invoke(raw: Any, parameters: Map<String, Any>): Result {
         return if (raw is Iterable<*>) {
             if (raw.iterator().hasNext()) {
                 if (raw.iterator().next()?.javaClass == String::class.java) {
