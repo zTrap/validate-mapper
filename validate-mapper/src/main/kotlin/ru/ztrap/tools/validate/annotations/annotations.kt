@@ -17,8 +17,12 @@ annotation class NotRequired
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Parameters(
-    val forChecker: KClass<out ValidateChecker>,
+annotation class ChecksParametrized(vararg val expressionChecks: CheckParametrized)
+
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class CheckParametrized(
+    val expressionClass: KClass<out ValidateChecker>,
     val string: Array<StringParameter> = [],
     val byte: Array<ByteParameter> = [],
     val short: Array<ShortParameter> = [],

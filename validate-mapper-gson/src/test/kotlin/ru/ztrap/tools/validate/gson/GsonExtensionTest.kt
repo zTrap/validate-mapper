@@ -5,9 +5,6 @@ import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import ru.ztrap.tools.validate.annotations.Checks
-import ru.ztrap.tools.validate.annotations.Parameters
-import ru.ztrap.tools.validate.annotations.Parameters.LongParameter
 import ru.ztrap.tools.validate.checks.ValidateChecker
 import ru.ztrap.tools.validate.mapper.ValidateMapper
 
@@ -80,8 +77,6 @@ object TestCase {
         |""".trimMargin()
 
     data class Raw(
-        @Checks(TrimmedStringLengthCheck::class)
-        @Parameters(forChecker = TrimmedStringLengthCheck::class, long = [LongParameter(TrimmedStringLengthCheck.LENGTH, 12)])
         val firstField: String?,
         @SerializedName("second")
         val secondField: Boolean?
@@ -103,14 +98,18 @@ object TestCase {
             return if (raw is String) {
                 val maxLength = parameters[LENGTH]?.toString()?.toLong()
                 if (maxLength != null) {
-                    val currentLength = raw.trim().length
-                    if (currentLength <= maxLength) {
-                        Result.Success
+                    if (maxLength >= 0) {
+                        val currentLength = raw.trim().length
+                        if (currentLength <= maxLength) {
+                            Result.Success
+                        } else {
+                            Result.Error("current length = $currentLength and max length = $maxLength")
+                        }
                     } else {
-                        Result.Error("current length = $currentLength, max length = $maxLength")
+                        Result.Error("max length is negative")
                     }
                 } else {
-                    Result.Error("length constraint is not set via @Parameters(forChecker=TrimmedStringLengthCheck::class, long=[LongParameter(name=TrimmedStringLengthCheck.SIZE, value=0)])")
+                    Result.Error("length constraint is not set via @CheckParametrized(expressionClass=TrimmedStringLengthCheck::class, long=[LongParameter(name=TrimmedStringLengthCheck.LENGTH, value=0)])")
                 }
             } else {
                 Result.Error("not a string")
