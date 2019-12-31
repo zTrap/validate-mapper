@@ -14,20 +14,23 @@ import ru.ztrap.tools.validate.mapper.ValidateMapper
 class GsonExtensionTest {
 
     @Test fun `test gson field name extract`() {
-        val gson = GsonBuilder().setFieldNamingPolicy(LOWER_CASE_WITH_UNDERSCORES).create()
+        val config: GsonBuilder.() -> Unit = {
+            setFieldNamingPolicy(LOWER_CASE_WITH_UNDERSCORES)
+        }
 
-        ValidateExtensionGson.install(gson)
+        val gson = GsonBuilder().apply(config).create()
+
+        ValidateExtensionGson.install(config)
 
         val raw1 = gson.fromJson(TestCase.json1, TestCase.Raw::class.java)
-        val result1 = TestCase.Raw.MapperToMapped().runCatching { invoke(raw1) }
-        result1.getOrThrow()
+        val result1 = TestCase.Raw.runCatching { invoke(raw1) }
 
         assertThat(result1.getOrNull())
             .isNotNull
             .hasToString("Mapped(firstField=string value, secondField=false)")
 
         val raw2 = gson.fromJson(TestCase.json2, TestCase.Raw::class.java)
-        val result2 = TestCase.Raw.MapperToMapped().runCatching { invoke(raw2) }
+        val result2 = TestCase.Raw.runCatching { invoke(raw2) }
 
         assertThat(result2.exceptionOrNull())
             .isNotNull()
@@ -40,7 +43,7 @@ class GsonExtensionTest {
             )
 
         val raw3 = gson.fromJson(TestCase.json3, TestCase.Raw::class.java)
-        val result3 = TestCase.Raw.MapperToMapped().runCatching { invoke(raw3) }
+        val result3 = TestCase.Raw.runCatching { invoke(raw3) }
 
         assertThat(result3.exceptionOrNull())
             .isNotNull()
@@ -81,7 +84,7 @@ object TestCase {
         @SerializedName("second")
         val secondField: Boolean?
     ) {
-        class MapperToMapped : ValidateMapper<Raw, Mapped>() {
+        companion object Mapper : ValidateMapper<Raw, Mapped>() {
             override fun transform(raw: Raw) = Mapped(
                 raw.firstField!!,
                 raw.secondField!!

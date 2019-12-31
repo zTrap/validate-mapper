@@ -1,5 +1,6 @@
 package ru.ztrap.tools.validate.checks
 
+
 object NotEmptyIterableCheck : ValidateChecker() {
 
     override fun invoke(raw: Any, parameters: Map<String, Any>): Result {

@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentSkipListSet
 import kotlin.reflect.KClass
 
 abstract class ValidateMapper<T : Any, R> : (T) -> R {
-    private val failedParams = hashMapOf<String, List<String>>()
+    private val failedParams = hashMapOf<String, List<ValidateChecker.Result.Error>>()
 
     @Throws(FailedValidationException::class)
     override operator fun invoke(raw: T): R {
@@ -76,11 +76,10 @@ abstract class ValidateMapper<T : Any, R> : (T) -> R {
                         .minus(excludedChecks)
                         .map { (checkerClass, params) -> checkerClass.getOrCreateInstance() to params }
                         .map { (checker, params) -> checker.invoke(value, params) }
-                        .map { it.reason }
-                        .filter { it.isNotBlank() }
+                        .mapNotNull { it as? ValidateChecker.Result.Error }
                         .toList()
                 }
-                required -> listOf("null")
+                required -> listOf(ValidateChecker.Result.Error("null"))
                 else -> return@forEach
             }
 

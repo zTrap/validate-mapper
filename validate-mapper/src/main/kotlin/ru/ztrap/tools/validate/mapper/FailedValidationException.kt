@@ -1,7 +1,9 @@
 package ru.ztrap.tools.validate.mapper
 
+import ru.ztrap.tools.validate.checks.ValidateChecker
+
 class FailedValidationException(
-    val failedParams: Map<String, List<String>>,
+    val failedParams: Map<String, List<ValidateChecker.Result.Error>>,
     val rawObject: Any
 ) : RuntimeException(
     "Failed validation of received object.\n" +

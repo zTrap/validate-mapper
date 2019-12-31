@@ -1,4 +1,5 @@
 rootProject.name = 'validate-mapper-project'
 include 'validate-mapper'
 include 'validate-mapper-gson'
+include 'validate-mapper-common'
 
