@@ -119,12 +119,18 @@ private const val MAX_UUID_LENGTH = 36L
 data class MessageNetworkEntity(
     @CheckParametrized(
         expressionClass = TrimmedStringLengthCheck::class,
-        long = [CheckParametrized.LongParameter(TrimmedStringLengthCheck.MAX_LIMIT_LONG, MAX_UUID_LENGTH)]
+        long = [
+            CheckParametrized.LongParameter(TrimmedStringLengthCheck.MAX_LIMIT_LONG, MAX_UUID_LENGTH),
+            CheckParametrized.LongParameter(TrimmedStringLengthCheck.MIN_LIMIT_LONG, MAX_UUID_LENGTH)
+        ]
     )
     val id: String?,
     @CheckParametrized(
         expressionClass = TrimmedStringLengthCheck::class,
-        long = [CheckParametrized.LongParameter(TrimmedStringLengthCheck.MAX_LIMIT_LONG, MAX_UUID_LENGTH)]
+        long = [
+            CheckParametrized.LongParameter(TrimmedStringLengthCheck.MAX_LIMIT_LONG, MAX_UUID_LENGTH),
+            CheckParametrized.LongParameter(TrimmedStringLengthCheck.MIN_LIMIT_LONG, MAX_UUID_LENGTH)
+        ]
     )
     val senderId: String?,
     ...
@@ -149,7 +155,7 @@ As result, we get thrown exception with following message:
 ```
 ru.ztrap.tools.validate.mapper.FailedValidationException: Failed validation of received object.
     Object -> MessageNetworkEntity(id=52b1c9c5-3cb2-41f0, senderId=52b1c9c5-3cb2-41f0-adff-1b0da5cffeee, text=null, attachmentUrl=https://avatars.githubusercontent.com/u/18091396?s=460&u=72fb5fb2f4d8a2ef3b6195ee371a130532656095&v=4)
-    Params -> id - Reasons -> [{reason="length not in limits", values=[min_limit=0, max_limit=36, current_length=18]}]
+    Params -> id - Reasons -> [{reason="length not in limits", values=[min_limit=36, max_limit=36, current_length=18]}]
     ...
 ```
 
