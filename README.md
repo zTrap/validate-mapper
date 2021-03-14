@@ -72,7 +72,7 @@ val networkMessage = MessageNetworkEntity(
 val domainMessage = networkMessage.validateMap(MessageNetworkEntity)
 ```
 
-Is some constraint is not met, `validateMap` will throw a `FailedValidationException` and provide detailed explanation of what is not met.
+If some constraint is not met, `validateMap` will throw a `FailedValidationException` and provide detailed explanation of what is not met.
 Example:
 
 ```kotlin
@@ -101,14 +101,14 @@ ru.ztrap.tools.validate.mapper.FailedValidationException: Failed validation of r
 You can provide named parameters into any `ValidateChecker` via any of this annotations
 
 ```kotlin
-    annotation class StringParameter(val name: String, val value: String)
-    annotation class ByteParameter(val name: String, val value: Byte)
-    annotation class ShortParameter(val name: String, val value: Short)
-    annotation class IntParameter(val name: String, val value: Int)
-    annotation class LongParameter(val name: String, val value: Long)
-    annotation class FloatParameter(val name: String, val value: Float)
-    annotation class DoubleParameter(val name: String, val value: Double)
-    annotation class KClassParameter(val name: String, val value: KClass<*>)
+annotation class StringParameter(val name: String, val value: String)
+annotation class ByteParameter(val name: String, val value: Byte)
+annotation class ShortParameter(val name: String, val value: Short)
+annotation class IntParameter(val name: String, val value: Int)
+annotation class LongParameter(val name: String, val value: Long)
+annotation class FloatParameter(val name: String, val value: Float)
+annotation class DoubleParameter(val name: String, val value: Double)
+annotation class KClassParameter(val name: String, val value: KClass<*>)
 ```
 
 Let's add length checks to unique id fields:
