@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import ru.ztrap.tools.validate.checks.ValidateChecker
 import ru.ztrap.tools.validate.mapper.ValidateMapper
 
 /**
@@ -14,13 +13,9 @@ import ru.ztrap.tools.validate.mapper.ValidateMapper
 class GsonExtensionTest {
 
     @Test fun `test gson field name extract`() {
-        val config: GsonBuilder.() -> Unit = {
-            setFieldNamingPolicy(LOWER_CASE_WITH_UNDERSCORES)
-        }
+        val gson = GsonBuilder().setFieldNamingPolicy(LOWER_CASE_WITH_UNDERSCORES).create()
 
-        val gson = GsonBuilder().apply(config).create()
-
-        ValidateExtensionGson.install(config)
+        ValidateExtensionGson.install(gson)
 
         val raw1 = gson.fromJson(TestCase.json1, TestCase.Raw::class.java)
         val result1 = TestCase.Raw.runCatching { invoke(raw1) }
@@ -33,12 +28,12 @@ class GsonExtensionTest {
         val result2 = TestCase.Raw.runCatching { invoke(raw2) }
 
         assertThat(result2.exceptionOrNull())
-            .isNotNull()
+            .isNotNull
             .hasMessage(
                 """
                 |Failed validation of received object.
                 |	Object -> Raw(firstField=string value, secondField=null)
-                |	Params -> second (field: secondField); Reasons -> [null]
+                |	Params -> second (field: secondField) - Reasons -> [{reason="value is null"}]
                 """.trimMargin()
             )
 
@@ -46,12 +41,13 @@ class GsonExtensionTest {
         val result3 = TestCase.Raw.runCatching { invoke(raw3) }
 
         assertThat(result3.exceptionOrNull())
-            .isNotNull()
+            .isNotNull
             .hasMessage(
                 """
                 |Failed validation of received object.
-                |	Object -> Raw(firstField=string value, secondField=null)
-                |	Params -> second (field: secondField); Reasons -> [null]
+                |	Object -> Raw(firstField=null, secondField=null)
+                |	Params -> first_field (field: firstField) - Reasons -> [{reason="value is null"}],
+                |	          second (field: secondField) ----- Reasons -> [{reason="value is null"}]
                 """.trimMargin()
             )
     }
@@ -63,21 +59,21 @@ object TestCase {
         |  "first_field": "string value",
         |  "second": false
         |}
-        |""".trimMargin()
+        """.trimMargin()
 
     val json2 = """
         |{
         |  "first_field": "string value",
         |  "second_field": false
         |}
-        |""".trimMargin()
+        """.trimMargin()
 
     val json3 = """
         |{
-        |  "first_field": "string value",
+        |  "first_field": null,
         |  "second": null
         |}
-        |""".trimMargin()
+        """.trimMargin()
 
     data class Raw(
         val firstField: String?,
@@ -86,37 +82,11 @@ object TestCase {
     ) {
         companion object Mapper : ValidateMapper<Raw, Mapped>() {
             override fun transform(raw: Raw) = Mapped(
-                raw.firstField!!,
-                raw.secondField!!
+                requireNotNull(raw.firstField),
+                requireNotNull(raw.secondField)
             )
         }
     }
 
     data class Mapped(val firstField: String, val secondField: Boolean)
-
-    object TrimmedStringLengthCheck : ValidateChecker() {
-        const val LENGTH = "LENGTH"
-
-        override fun invoke(raw: Any, parameters: Map<String, Any>): Result {
-            return if (raw is String) {
-                val maxLength = parameters[LENGTH]?.toString()?.toLong()
-                if (maxLength != null) {
-                    if (maxLength >= 0) {
-                        val currentLength = raw.trim().length
-                        if (currentLength <= maxLength) {
-                            Result.Success
-                        } else {
-                            Result.Error("current length = $currentLength and max length = $maxLength")
-                        }
-                    } else {
-                        Result.Error("max length is negative")
-                    }
-                } else {
-                    Result.Error("length constraint is not set via @CheckParametrized(expressionClass=TrimmedStringLengthCheck::class, long=[LongParameter(name=TrimmedStringLengthCheck.LENGTH, value=0)])")
-                }
-            } else {
-                Result.Error("not a string")
-            }
-        }
-    }
 }

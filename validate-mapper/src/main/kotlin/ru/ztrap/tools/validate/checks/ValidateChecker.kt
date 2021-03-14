@@ -1,35 +1,27 @@
 package ru.ztrap.tools.validate.checks
 
 abstract class ValidateChecker {
+
+    companion object {
+        const val CLASS_NAME = "class_name"
+    }
+
     abstract operator fun invoke(raw: Any, parameters: Map<String, Any>): Result
+
+    protected inline fun <reified T : Any> T.className(): String {
+        return this::class.java.canonicalName
+    }
 
     sealed class Result {
         object Success : Result()
-        data class Error(val reason: String, val args: Array<Any> = emptyArray()) : Result() {
+        data class Error(val reason: String, val values: Map<String, Any> = emptyMap()) : Result() {
 
-            override fun equals(other: Any?): Boolean {
-                if (this === other) return true
-                if (javaClass != other?.javaClass) return false
-
-                other as Error
-
-                if (reason != other.reason) return false
-                if (!args.contentEquals(other.args)) return false
-
-                return true
+            override fun toString(): String = if (values.isEmpty()) {
+                "{reason=\"$reason\"}"
+            } else {
+                val valuesString = values.entries.joinToString(prefix = "[", postfix = "]") { "${it.key}=${it.value}" }
+                "{reason=\"$reason\", values=$valuesString}"
             }
-
-            override fun hashCode(): Int {
-                var result = reason.hashCode()
-                result = 31 * result + args.contentHashCode()
-                return result
-            }
-
-            override fun toString(): String {
-                return "{reason=\"$reason\", args=${args.contentToString()}}"
-            }
-
-
         }
     }
 }

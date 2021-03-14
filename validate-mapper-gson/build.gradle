@@ -1,23 +1,12 @@
-apply plugin: "org.jetbrains.dokka"
-
 ext {
     pom_info.artifact.id = "$baseArtifactName-gson"
     pom_info.artifact.name = "Gson-engine for Validate mapper"
     pom_info.artifact.description = "Gson-engine for Validate mapper $pom_info.repo.url"
 }
 
-dokka {
-    outputFormat = "javadoc"
-    outputDirectory = "$buildDir/javadoc"
-    packageOptions {
-        prefix = pom_info.artifact.id
-    }
-}
-
 apply from: "../publishing.gradle"
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$versions.kotlin"
     implementation project(":validate-mapper")
 
     // Gson

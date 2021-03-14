@@ -1,16 +1,16 @@
 package ru.ztrap.tools.validate.mapper
 
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListSet
+import kotlin.reflect.KClass
 import ru.ztrap.tools.validate.annotations.CheckParametrized
 import ru.ztrap.tools.validate.annotations.Checks
 import ru.ztrap.tools.validate.annotations.ChecksParametrized
 import ru.ztrap.tools.validate.annotations.ExcludeChecks
 import ru.ztrap.tools.validate.annotations.NotRequired
 import ru.ztrap.tools.validate.checks.ValidateChecker
-import java.lang.reflect.Field
-import java.lang.reflect.Modifier
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentSkipListSet
-import kotlin.reflect.KClass
 
 abstract class ValidateMapper<T : Any, R> : (T) -> R {
     private val failedParams = hashMapOf<String, List<ValidateChecker.Result.Error>>()
@@ -62,10 +62,10 @@ abstract class ValidateMapper<T : Any, R> : (T) -> R {
                         ?.expressionChecks
                         ?.asSequence()
                         .orEmpty()
-                        .let { seq ->
+                        .let { sequence ->
                             field.findAnnotation<CheckParametrized>()
-                                ?.let { seq.plus(it) }
-                                ?: seq
+                                ?.let { sequence.plus(it) }
+                                ?: sequence
                         }
                         .map { it.parsed }
 
@@ -76,11 +76,11 @@ abstract class ValidateMapper<T : Any, R> : (T) -> R {
                         .minus(excludedChecks)
                         .map { (checkerClass, params) -> checkerClass.getOrCreateInstance() to params }
                         .map { (checker, params) -> checker.invoke(value, params) }
-                        .mapNotNull { it as? ValidateChecker.Result.Error }
+                        .filterIsInstance<ValidateChecker.Result.Error>()
                         .toList()
                 }
-                required -> listOf(ValidateChecker.Result.Error("null"))
-                else -> return@forEach
+                required -> listOf(ValidateChecker.Result.Error("value is null"))
+                else -> emptyList() // Value is null and not required. Skipping field
             }
 
             if (reasons.isNotEmpty()) {
@@ -90,19 +90,16 @@ abstract class ValidateMapper<T : Any, R> : (T) -> R {
     }
 
     private val CheckParametrized.parsed: Pair<CheckerClass, Parameters>
-        get() {
-            return expressionClass to emptySequence<Pair<String, Any>>()
-                    .plus(string.map { it.name to (it.value as Any) })
-                    .plus(byte.map { it.name to (it.value as Any) })
-                    .plus(short.map { it.name to (it.value as Any) })
-                    .plus(int.map { it.name to (it.value as Any) })
-                    .plus(long.map { it.name to (it.value as Any) })
-                    .plus(float.map { it.name to (it.value as Any) })
-                    .plus(double.map { it.name to (it.value as Any) })
-                    .plus(kclass.map { it.name to (it.value as Any) })
-                    .toMap()
-        }
-
+        get() = expressionClass to emptySequence<Pair<String, Any>>()
+            .plus(string.map { it.name to it.value })
+            .plus(byte.map { it.name to it.value })
+            .plus(short.map { it.name to it.value })
+            .plus(int.map { it.name to it.value })
+            .plus(long.map { it.name to it.value })
+            .plus(float.map { it.name to it.value })
+            .plus(double.map { it.name to it.value })
+            .plus(kclass.map { it.name to it.value })
+            .toMap()
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> KClass<T>.getOrCreateInstance(): T {
@@ -116,29 +113,47 @@ abstract class ValidateMapper<T : Any, R> : (T) -> R {
     }
 
     companion object {
-        private val globalChecks = ConcMap<KClass<*>, ConcSet<Pair<CheckerClass, Parameters>>>()
+        private val globalChecks = ConcurrentHashMap<KClass<*>, ChecksSet>()
         private var nameExtractor: ((Field) -> String)? = null
 
-        @JvmStatic fun addGlobalCheck(clsCheckPair: Pair<Class<*>, Class<out ValidateChecker>>): Companion {
+        @JvmStatic
+        fun addGlobalCheck(clsCheckPair: Pair<Class<*>, Class<out ValidateChecker>>): Companion {
             return addGlobalCheck(clsCheckPair.first, clsCheckPair.second)
         }
 
-        @JvmStatic fun addGlobalCheck(
+        @JvmStatic
+        fun addGlobalCheck(
             clsToCheck: Class<*>,
             clsWhoCheck: Class<out ValidateChecker>,
             parameters: Parameters = emptyMap()
         ): Companion {
-            globalChecks.getOrPut(clsToCheck.kotlin) { ConcurrentSkipListSet() }
-                .add(clsWhoCheck.kotlin to parameters)
+            return addGlobalCheck(clsToCheck.kotlin, clsWhoCheck.kotlin, parameters)
+        }
+
+        @JvmName("addGlobalCheckKotlin")
+        @JvmStatic
+        fun addGlobalCheck(clsCheckPair: Pair<KClass<*>, CheckerClass>): Companion {
+            return addGlobalCheck(clsCheckPair.first, clsCheckPair.second)
+        }
+
+        @JvmStatic
+        fun addGlobalCheck(
+            clsToCheck: KClass<*>,
+            clsWhoCheck: CheckerClass,
+            parameters: Parameters = emptyMap()
+        ): Companion {
+            globalChecks.getOrPut(clsToCheck) { ChecksSet() }.add(clsWhoCheck to parameters)
             return this
         }
 
-        @JvmStatic fun setNameExtractor(nameExtractor: (Field) -> String): Companion {
+        @JvmStatic
+        fun setNameExtractor(nameExtractor: (Field) -> String): Companion {
             this.nameExtractor = nameExtractor
             return this
         }
 
-        @JvmStatic fun clearNameExtractor(): Companion {
+        @JvmStatic
+        fun clearNameExtractor(): Companion {
             this.nameExtractor = null
             return this
         }
@@ -147,5 +162,4 @@ abstract class ValidateMapper<T : Any, R> : (T) -> R {
 
 private typealias CheckerClass = KClass<out ValidateChecker>
 private typealias Parameters = Map<String, Any>
-private typealias ConcMap<K, V> = ConcurrentHashMap<K, V>
-private typealias ConcSet<V> = ConcurrentSkipListSet<V>
+private typealias ChecksSet = ConcurrentSkipListSet<Pair<CheckerClass, Parameters>>

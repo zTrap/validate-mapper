@@ -2,21 +2,21 @@ buildscript {
     apply from: 'dependencies.gradle'
 
     repositories {
-        google()
-        jcenter()
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
     }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$versions.kotlin"
-        classpath "org.jetbrains.dokka:dokka-android-gradle-plugin:$versions.dokka"
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$versions.bintray"
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:$versions.dokka"
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:$versions.nexus_staging"
     }
 }
 
 allprojects {
     repositories {
-        google()
-        jcenter()
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
     }
 }
 
@@ -25,8 +25,11 @@ subprojects {
     apply plugin: 'kotlin'
 
     sourceSets {
-        main.java.setSrcDirs(['src/main/kotlin'])
-        test.java.setSrcDirs(['src/test/kotlin'])
+        main.java.setSrcDirs([])
+        test.java.setSrcDirs([])
+
+        main.kotlin.setSrcDirs(['src/main/kotlin'])
+        test.kotlin.setSrcDirs(['src/test/kotlin'])
     }
 
     compileKotlin {
@@ -36,8 +39,15 @@ subprojects {
     compileTestKotlin {
         kotlinOptions.jvmTarget = setup.jvm
     }
+
+    dependencies {
+        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$versions.kotlin"
+    }
 }
 
 task clean(type: Delete) {
+    group = "build"
     delete rootProject.buildDir
 }
+
+apply plugin: 'io.codearte.nexus-staging'
